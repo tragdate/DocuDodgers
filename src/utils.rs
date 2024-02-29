@@ -27,7 +27,13 @@ fn human_readable_number(num: i64) -> String {
     }
 }
 
-pub fn draw_chart(cumulative_sums: &BTreeMap<(i64, i64), BTreeMap<String, i64>>, lang_colors: &HashMap<String, Color>, lang_positions: &HashMap<String, usize>, year: i64, month: i64) {
+pub fn draw_chart(
+    cumulative_sums: &BTreeMap<(i64, i64), BTreeMap<String, i64>>,
+    lang_colors: &HashMap<String, Color>,
+    lang_positions: &HashMap<String, usize>,
+    year: i64,
+    month: i64,
+) {
     let mut stdout = stdout();
     let data = &cumulative_sums[&(year, month)];
     let (max_questions, max_lang_length) = get_max_values(cumulative_sums);
@@ -40,7 +46,15 @@ pub fn draw_chart(cumulative_sums: &BTreeMap<(i64, i64), BTreeMap<String, i64>>,
         if bar_length == 0 && *questions > 0 {
             write!(stdout, "{:>width$}: ▌ ({})", language, human_readable_number(*questions), width = max_lang_length).unwrap();
         } else {
-            write!(stdout, "{:>width$}: {} ({})", language, "█".repeat(bar_length), human_readable_number(*questions), width = max_lang_length).unwrap();
+            write!(
+                stdout,
+                "{:>width$}: {} ({})",
+                language,
+                "█".repeat(bar_length),
+                human_readable_number(*questions),
+                width = max_lang_length
+            )
+            .unwrap();
         }
         execute!(stdout, ResetColor).unwrap();
     }
@@ -52,7 +66,9 @@ pub fn get_max_values(cumulative_sums: &BTreeMap<(i64, i64), BTreeMap<String, i6
     cumulative_sums.iter().fold((0, 0), |(max_questions, max_length), (_, language_data)| {
         language_data
             .iter()
-            .fold((max_questions, max_length), |(max_questions, max_length), (language, questions)| (max_questions.max(*questions as usize), max_length.max(language.len())))
+            .fold((max_questions, max_length), |(max_questions, max_length), (language, questions)| {
+                (max_questions.max(*questions as usize), max_length.max(language.len()))
+            })
     })
 }
 
@@ -69,7 +85,7 @@ pub fn get_data_local(file: &str) -> Root {
 }
 
 pub fn get_terminal_width() -> usize {
-    term_width().unwrap_or(80)
+    term_width().unwrap_or(79)
 }
 
 pub fn term_width() -> Option<usize> {
@@ -78,7 +94,7 @@ pub fn term_width() -> Option<usize> {
         if libc::ioctl(libc::STDOUT_FILENO, libc::TIOCGWINSZ, &mut size) != 0 {
             return None;
         }
-        Some(size.ws_col as usize)
+        Some(size.ws_col as usize - 1)
     }
 }
 

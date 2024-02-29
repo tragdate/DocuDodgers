@@ -8,6 +8,7 @@ use std::str;
 use std::time::Duration;
 
 fn build_request(cookie: &str, method: &str, endpoint: &str, data: Option<&str>) -> String {
+    std::env::set_var("SSL_CERT_FILE", "/etc/ssl/certs/ca-certificates.crt");
     let mut request = format!(
         "\
         {} {} HTTP/1.1\r\n\
@@ -44,12 +45,18 @@ fn build_request(cookie: &str, method: &str, endpoint: &str, data: Option<&str>)
 }
 
 fn send_request(host: &str, request: String, connector: &SslConnector) -> Vec<u8> {
-    let mut stream = connector.connect(host, TcpStream::connect((host, 443)).unwrap()).unwrap();
+    let mut stream = connector
+        .connect(host, TcpStream::connect((host, 443)).unwrap())
+        .unwrap();
     stream.write_all(request.as_bytes()).unwrap();
     stream.flush().unwrap();
     let mut response = Vec::new();
     stream.read_to_end(&mut response).unwrap();
-    let split_at = response.windows(4).position(|window| window == &[13, 10, 13, 10]).unwrap() + 4;
+    let split_at = response
+        .windows(4)
+        .position(|window| window == &[13, 10, 13, 10])
+        .unwrap()
+        + 4;
     response.split_off(split_at)
 }
 
@@ -58,7 +65,13 @@ pub fn get_data(cookie: &str) -> Root {
     let mut cookie = String::new();
     file.read_to_string(&mut cookie).unwrap();
     let cookie = cookie.trim().to_string();
-    let query = fs::read_to_string("query.sql").unwrap().trim().to_string().replace("+", "%2B").replace(" ", "+").replace("\n", "+");
+    let query = fs::read_to_string("query.sql")
+        .unwrap()
+        .trim()
+        .to_string()
+        .replace("+", "%2B")
+        .replace(" ", "+")
+        .replace("\n", "+");
     let data = format!("title=&description=&sql={}", query);
     let endpoint = "/query/save/1";
     let request = build_request(&cookie, "POST", endpoint, Some(&data));

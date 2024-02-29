@@ -33,14 +33,20 @@ fn main() {
     for result_set in &root.result_sets {
         for row in &result_set.rows {
             let (year, month, language, questions) = row;
-            dataset.entry((*year, *month)).or_default().push((language.clone(), *questions));
+            dataset
+                .entry((*year, *month))
+                .or_default()
+                .push((language.clone(), *questions));
         }
     }
     let mut cumulative_sums: BTreeMap<(i64, i64), BTreeMap<String, i64>> = BTreeMap::new();
     let mut lang_colors: HashMap<String, Color> = HashMap::new();
     let mut i = 0;
     for ((year, month), data) in &dataset {
-        let mut month_data = cumulative_sums.get(&(*year, *month - 1)).cloned().unwrap_or_default();
+        let mut month_data = cumulative_sums
+            .get(&(*year, *month - 1))
+            .cloned()
+            .unwrap_or_default();
 
         if *month == 1 && *year != dataset.keys().next().unwrap().0 {
             for (language, questions) in cumulative_sums.get(&(*year - 1, 12)).unwrap() {
@@ -77,13 +83,20 @@ fn main() {
     }
 
     for ((year, month), language_data) in &cumulative_sums {
-        let mut language_data_vec: Vec<(String, i64)> = language_data.iter().map(|(k, v)| (k.clone(), *v)).collect();
+        let mut language_data_vec: Vec<(String, i64)> =
+            language_data.iter().map(|(k, v)| (k.clone(), *v)).collect();
         language_data_vec.sort_by(|a, b| b.1.cmp(&a.1)); // Sort the vector of language data
         for (i, (language, _)) in language_data_vec.iter().enumerate() {
             lang_positions.insert(language.clone(), i); // Assign new line positions
         }
-        let _ = draw_chart(&cumulative_sums, &lang_colors, &lang_positions, *year, *month);
-        thread::sleep(Duration::from_millis(50));
+        let _ = draw_chart(
+            &cumulative_sums,
+            &lang_colors,
+            &lang_positions,
+            *year,
+            *month,
+        );
+        thread::sleep(Duration::from_millis(100));
     }
     //press anything to exit
     std::io::stdin().read_line(&mut String::new()).unwrap();
